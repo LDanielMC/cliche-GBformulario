@@ -64,10 +64,7 @@ function buildEmailHtml(
           <!-- Header -->
           <tr>
             <td style="padding:40px 48px 32px;text-align:center;background:linear-gradient(135deg,rgba(217,70,239,0.08) 0%,rgba(99,102,241,0.08) 100%);">
-              <div style="display:inline-block;background:linear-gradient(135deg,#d946ef,#818cf8);-webkit-background-clip:text;color:transparent;font-size:28px;font-weight:800;letter-spacing:-0.5px;">
-                Cliché
-              </div>
-              <div style="color:#9ca3af;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin-top:4px;">Marketing Digital</div>
+              <img src="https://formulario.cliche.com.mx/logocliche.png" alt="Cliché Marketing Digital" style="height:60px;width:auto;display:block;margin:0 auto;" />
             </td>
           </tr>
           <!-- Body -->

@@ -1,14 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, Mail, MessageCircle, X } from "lucide-react";
+import { CheckCircle2, Mail, X } from "lucide-react";
 
 interface SuccessScreenProps {
   name: string;
   whatsappLink?: string;
 }
 
-export function SuccessScreen({ name, whatsappLink }: SuccessScreenProps) {
+export function SuccessScreen({ name }: SuccessScreenProps) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.96 }}
@@ -87,38 +87,6 @@ export function SuccessScreen({ name, whatsappLink }: SuccessScreenProps) {
           </div>
         </div>
 
-        {whatsappLink ? (
-          <a
-            href={whatsappLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 rounded-xl border px-4 py-3 transition-all duration-200 hover:border-emerald-500/40 hover:bg-emerald-500/[0.05] active:scale-[0.98]"
-            style={{ borderColor: "rgba(34,197,94,0.2)", background: "rgba(34,197,94,0.04)" }}
-          >
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-              <MessageCircle size={15} className="text-emerald-400" />
-            </div>
-            <div className="text-left flex-1">
-              <p className="text-xs font-medium text-white/75">WhatsApp</p>
-              <p className="text-[11px] text-white/35">Toca para abrir la conversación</p>
-            </div>
-            <div className="text-emerald-400/60">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </div>
-          </a>
-        ) : (
-          <div className="flex items-center gap-3 rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 opacity-50">
-            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
-              <MessageCircle size={15} className="text-white/30" />
-            </div>
-            <div className="text-left">
-              <p className="text-xs font-medium text-white/40">WhatsApp</p>
-              <p className="text-[11px] text-white/25">Próximamente disponible</p>
-            </div>
-          </div>
-        )}
       </motion.div>
 
       {/* Close hint */}
@@ -126,10 +94,10 @@ export function SuccessScreen({ name, whatsappLink }: SuccessScreenProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="flex items-center gap-1.5 text-white/20"
+        className="flex items-center gap-1.5 text-white/50"
       >
-        <X size={11} />
-        <span className="text-[11px]">Puedes cerrar esta ventana</span>
+        <X size={13} />
+        <span className="text-xs">Puedes cerrar esta ventana</span>
       </motion.div>
     </motion.div>
   );

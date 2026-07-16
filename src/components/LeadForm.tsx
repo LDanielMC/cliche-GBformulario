@@ -124,7 +124,7 @@ export function LeadForm() {
       business: "",
       whatsapp: "",
       email: "",
-      consent: false,
+      consent: false as unknown as true,
       honeypot: "",
     },
   });
