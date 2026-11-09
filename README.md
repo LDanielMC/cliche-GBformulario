@@ -1,217 +1,94 @@
-# Cliché Marketing Digital — Sistema de Captación de Prospectos NFC
+# Cliché GB Formulario — captación de prospectos por tarjeta NFC
 
-Sistema inteligente de captación de prospectos activado por tarjeta NFC. Permite registrar clientes potenciales, enviar catálogos automáticamente y alimentar una base de datos escalable.
+Aplicación web que recibe a quien toca con su teléfono una tarjeta NFC de Cliché Marketing Digital: le pide sus datos en un formulario, los guarda en Firebase Firestore y le envía por correo el catálogo de servicios. Sirve al equipo comercial de la agencia para convertir cada contacto en persona en un prospecto registrado. **En producción.**
 
----
+## Funcionalidades principales
 
-## Stack tecnológico
+- **Formulario de captura** con nombre, negocio, WhatsApp, correo y casilla de consentimiento, validado en el navegador y de nuevo en el servidor con Zod. El número de WhatsApp se valida con formato mexicano.
+- **Registro en Firestore** (colección `prospectos_nfc`) con origen `nfc`, estatus, parámetros UTM, fecha, y un hash de la IP en lugar de la IP.
+- **Envío automático del catálogo** por correo con Resend, con el PDF como enlace o adjunto, y registro de si se envió.
+- **Antiduplicados:** rechaza un correo ya registrado y un negocio repetido (identificador de documento a partir del negocio y los últimos cuatro dígitos del WhatsApp).
+- **Protección básica:** límite de 3 solicitudes por minuto y por IP, sanitización de texto y cabeceras de seguridad HTTP.
+- **Aviso de privacidad** en una página propia.
+- **Animaciones** y pantalla de confirmación al terminar el registro.
+
+## Capturas
+
+<!-- Agrega aquí tus imágenes, por ejemplo: ![Formulario](docs/capturas/formulario.png) -->
+
+_Pendiente._
+
+## Stack
 
 | Capa | Tecnología |
 |---|---|
-| Framework | Next.js 14 (App Router) |
-| Lenguaje | TypeScript |
-| Estilos | Tailwind CSS |
-| Animaciones | Framer Motion |
-| Validaciones | Zod + React Hook Form |
-| Base de datos | Supabase (PostgreSQL) |
-| Email | Resend |
-| Despliegue | Vercel |
+| Framework | Next.js 14 (App Router), React 18, TypeScript 5 |
+| Estilos y animación | Tailwind CSS 3, Radix UI, Framer Motion 11 |
+| Formularios y validación | React Hook Form 7, Zod 3 |
+| Base de datos | Firebase Firestore (SDK de administrador `firebase-admin` 14) |
+| Correo | Resend 3 |
 
----
-
-## Arquitectura del sistema
+## Arquitectura
 
 ```
-NFC Card → Web App → Form → API Route → Supabase DB
-                                      ↓
-                                 Resend Email (PDF)
-                                      ↓
-                              WhatsApp Deep Link (hoy)
-                              WhatsApp Meta API (futuro)
+Tarjeta NFC → página con el formulario → POST /api/prospects → Firestore (prospectos_nfc)
+                                                            └→ correo con el catálogo (Resend)
 ```
-
----
-
-## Estructura del proyecto
 
 ```
 src/
 ├── app/
-│   ├── api/
-│   │   └── prospects/route.ts     # API: recibe y guarda el lead
-│   ├── aviso-de-privacidad/
-│   │   └── page.tsx               # Página de aviso de privacidad
-│   ├── globals.css
+│   ├── api/prospects/route.ts   recibe, valida, deduplica y guarda el prospecto; dispara el correo
+│   ├── aviso-de-privacidad/     página del aviso de privacidad
 │   ├── layout.tsx
-│   └── page.tsx                   # Página principal con formulario
-├── components/
-│   ├── ui/
-│   │   ├── AnimatedBackground.tsx
-│   │   └── Logo.tsx
-│   ├── LeadForm.tsx               # Formulario principal
-│   └── SuccessScreen.tsx          # Pantalla de éxito
+│   └── page.tsx                 página con el formulario
+├── components/                  LeadForm, SuccessScreen y elementos de interfaz
 ├── lib/
-│   ├── email.ts                   # Envío de correos con Resend
-│   ├── supabase.ts                # Clientes Supabase (público y admin)
-│   ├── utils.ts                   # Utilidades: cn, hashIp, etc.
-│   ├── validations.ts             # Esquemas Zod
-│   └── whatsapp.ts                # WhatsApp: deep-link / Meta API
-└── types/
-    └── prospect.ts                # Tipos TypeScript del dominio
-supabase/
-└── migrations/
-    └── 001_create_prospects.sql   # Migración de base de datos
+│   ├── firebase.ts              inicializa Firestore con una cuenta de servicio
+│   ├── email.ts                 correo del catálogo con Resend
+│   ├── validations.ts           esquemas Zod
+│   ├── utils.ts                 sanitización, hash de IP, IP del cliente
+│   └── whatsapp.ts              módulo de WhatsApp (enlace directo o API de Meta); aún no se invoca desde la API
+└── types/prospect.ts
+supabase/migrations/             migración de Supabase heredada; el proyecto no usa Supabase
 ```
 
----
+La persistencia es solo Firestore. La carpeta `supabase/` quedó de una versión anterior del proyecto y no se ejecuta en ningún punto del código.
 
-## Setup inicial
+## Instalación y ejecución
 
-### 1. Instalar dependencias
+Requisitos: Node.js 18.17 o superior, un proyecto de Firebase con Firestore y una cuenta de Resend con un dominio verificado.
 
 ```bash
+git clone https://github.com/LDanielMC/cliche-GBformulario.git
+cd cliche-GBformulario
 npm install
+# crea .env.local con las variables de la tabla siguiente
+npm run dev          # http://localhost:3000
 ```
 
-### 2. Configurar variables de entorno
-
-```bash
-cp .env.local.example .env.local
-```
-
-Edita `.env.local` con tus credenciales reales (ver sección Variables de entorno).
-
-### 3. Configurar Supabase
-
-1. Crea un proyecto en [supabase.com](https://supabase.com)
-2. Ve a **SQL Editor** y ejecuta el contenido de `supabase/migrations/001_create_prospects.sql`
-3. Copia las claves desde **Settings → API** a tu `.env.local`
-
-### 4. Configurar Resend
-
-1. Crea una cuenta en [resend.com](https://resend.com)
-2. Agrega y verifica tu dominio
-3. Genera una API Key y ponla en `RESEND_API_KEY`
-4. Sube tu PDF del catálogo y pon la URL en `CATALOG_PDF_URL`
-
-### 5. Ejecutar en desarrollo
-
-```bash
-npm run dev
-```
-
-Abre [http://localhost:3000](http://localhost:3000)
-
----
-
-## Variables de entorno
+### Variables de entorno
 
 | Variable | Descripción | Requerida |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | URL de tu proyecto Supabase | ✅ |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave anon de Supabase | ✅ |
-| `SUPABASE_SERVICE_ROLE_KEY` | Clave service role (solo servidor) | ✅ |
-| `RESEND_API_KEY` | API key de Resend | ✅ |
-| `RESEND_FROM_EMAIL` | Email remitente verificado | ✅ |
-| `CATALOG_PDF_URL` | URL pública del PDF del catálogo | ✅ |
-| `API_SECRET` | String aleatorio para firmar hashes | ✅ |
-| `WHATSAPP_API_URL` | URL de la Meta Cloud API | ⏳ Futuro |
-| `WHATSAPP_API_TOKEN` | Token de la Meta API | ⏳ Futuro |
-| `WHATSAPP_PHONE_NUMBER_ID` | Phone Number ID de Meta | ⏳ Futuro |
+| `FIREBASE_SERVICE_ACCOUNT_BASE64` | JSON de la cuenta de servicio de Firebase, codificado en base64 | Sí |
+| `RESEND_API_KEY` | Clave de la API de Resend | Sí |
+| `RESEND_FROM_EMAIL` | Remitente verificado en Resend | Sí |
+| `RESEND_FROM_NAME` | Nombre del remitente (por defecto "Cliché Marketing Digital") | No |
+| `CATALOG_PDF_URL` | URL pública del PDF del catálogo | Sí |
+| `API_SECRET` | Cadena aleatoria con la que se calcula el hash de la IP | Sí |
+| `WHATSAPP_MODE`, `WHATSAPP_API_URL`, `WHATSAPP_API_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TEMPLATE_NAME` | Para activar la API de WhatsApp de Meta cuando esté aprobada (por defecto, enlace directo) | No |
 
----
+Para generar el valor de la cuenta de servicio: `base64 -w0 serviceAccount.json` (en macOS, `base64 -i serviceAccount.json`).
 
-## Despliegue en Vercel
-
-```bash
-# Instala el CLI de Vercel si no lo tienes
-npm i -g vercel
-
-# Despliega
-vercel --prod
-```
-
-En el dashboard de Vercel, agrega todas las variables de entorno de `.env.local.example`.
-
-**Configuración recomendada:**
-- Framework: Next.js
-- Node.js: 20.x
-- Region: US East (más cercana a México)
-
----
-
-## Activar WhatsApp Meta API (cuando sea aprobado)
-
-Cuando Meta apruebe tu cuenta de negocio:
-
-1. Agrega las 4 variables en `.env.local` y en Vercel:
-   - `WHATSAPP_API_URL`
-   - `WHATSAPP_API_TOKEN`
-   - `WHATSAPP_PHONE_NUMBER_ID`
-   - `WHATSAPP_TEMPLATE_NAME`
-
-2. Agrega la variable:
-   ```
-   WHATSAPP_MODE=META_API
-   ```
-
-3. Crea un template de mensaje en Meta Business Suite llamado `catalog_send` con los parámetros:
-   - `{{1}}` = Nombre del cliente
-   - `{{2}}` = Nombre del negocio
-   - `{{3}}` = URL del catálogo
-
-**Sin tocar una sola línea de código del formulario ni del API route.**
-
----
-
-## Modelo de datos — tabla `prospects`
-
-| Campo | Tipo | Descripción |
-|---|---|---|
-| `id` | uuid | Identificador único |
-| `name` | text | Nombre del prospecto |
-| `business` | text | Nombre del negocio |
-| `whatsapp` | text | Número de WhatsApp |
-| `email` | text | Correo electrónico (único) |
-| `consent` | boolean | Consentimiento ARCO |
-| `status` | enum | new / contacted / qualified / ... |
-| `origin` | enum | nfc / qr / web / referral / ... |
-| `catalog_sent` | boolean | Si se envió el correo |
-| `catalog_sent_at` | timestamptz | Cuándo se envió |
-| `whatsapp_sent` | boolean | Si se envió por WA |
-| `ip_hash` | text | Hash del IP (privacidad) |
-| `utm_source/medium/campaign` | text | Atribución de marketing |
-| `created_at` | timestamptz | Fecha de registro |
-
----
-
-## Integraciones futuras sugeridas
-
-| Plataforma | Caso de uso |
+| Comando | Qué hace |
 |---|---|
-| **Make / Zapier** | Webhook al crear lead → notificar en Slack, crear contacto en CRM |
-| **HubSpot / Pipedrive** | Sincronizar prospectos automáticamente |
-| **Mailchimp / Brevo** | Agregar a listas de email marketing |
-| **Google Analytics 4** | Evento `lead_captured` al enviar el form |
-| **Meta Pixel** | Remarketing a visitantes que no convirtieron |
-| **Resend Broadcasts** | Campañas de email segmentadas desde la BD |
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Compila para producción |
+| `npm start` | Ejecuta la compilación |
+| `npm run lint` | Revisa el código con ESLint |
+| `npm run type-check` | Revisa los tipos con TypeScript |
 
-Para cualquiera de estas, el endpoint `/api/prospects` puede emitir un webhook a `WEBHOOK_URL` en el futuro sin cambiar nada más.
+## Pruebas
 
----
-
-## Seguridad implementada
-
-- ✅ Honeypot anti-bot en el formulario
-- ✅ Rate limiting por IP (3 req/min)
-- ✅ Validación con Zod en cliente y servidor
-- ✅ Sanitización de inputs (strip HTML)
-- ✅ IP almacenada solo como hash SHA-256
-- ✅ Service role key solo en servidor (nunca expuesta al cliente)
-- ✅ Headers de seguridad HTTP (X-Frame-Options, etc.)
-- ✅ RLS en Supabase (anon solo puede insertar con consent=true)
-- ✅ `robots: noindex` (no indexar el formulario en buscadores)
-
----
-
-© 2025 Cliché Marketing Digital
+El proyecto no incluye pruebas automatizadas; la calidad del código se revisa con `npm run lint` y `npm run type-check`.
